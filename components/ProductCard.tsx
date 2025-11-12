@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Product } from '@/types/Product';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from './IconSymbol';
@@ -15,19 +15,15 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
   const router = useRouter();
 
-  const handleAddToCart = (e: any) => {
-    // Stop event propagation to prevent card press
-    e.stopPropagation();
-    console.log('Add to cart:', product.name);
+  const handleAddToCart = () => {
+    console.log('Add to cart button pressed:', product.name);
     if (onAddToCart) {
       onAddToCart(product);
     }
   };
 
-  const handleBuyNow = (e: any) => {
-    // Stop event propagation to prevent card press
-    e.stopPropagation();
-    console.log('Buy now:', product.name);
+  const handleBuyNow = () => {
+    console.log('Buy now button pressed:', product.name);
     if (onBuyNow) {
       onBuyNow(product);
     }
@@ -40,8 +36,12 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
   };
 
   return (
-    <Pressable style={styles.card} onPress={handleCardPress}>
-      <View style={styles.imageContainer}>
+    <View style={styles.card}>
+      <TouchableOpacity 
+        style={styles.imageContainer} 
+        onPress={handleCardPress}
+        activeOpacity={0.8}
+      >
         <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
         <View style={styles.ratingBadge}>
           <IconSymbol
@@ -71,7 +71,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
             {product.farm}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
       <View style={styles.content}>
         <Text style={styles.productName} numberOfLines={1}>
           {product.name}
@@ -84,21 +84,23 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           <Text style={styles.unit}>{product.unit}</Text>
         </View>
         <View style={styles.buttonRow}>
-          <Pressable 
+          <TouchableOpacity 
             style={styles.addToCartButton} 
             onPress={handleAddToCart}
+            activeOpacity={0.7}
           >
             <Text style={styles.addToCartText}>Add to Cart</Text>
-          </Pressable>
-          <Pressable 
+          </TouchableOpacity>
+          <TouchableOpacity 
             style={styles.buyNowButton} 
             onPress={handleBuyNow}
+            activeOpacity={0.7}
           >
             <Text style={styles.buyNowText}>Buy Now</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 

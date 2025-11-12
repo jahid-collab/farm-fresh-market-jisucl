@@ -21,9 +21,11 @@ export const cartService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No user logged in');
+        console.log('No user logged in for getCartItems');
         return [];
       }
+
+      console.log('Fetching cart items for user:', user.id);
 
       const { data, error } = await supabase
         .from('cart_items')
@@ -48,7 +50,9 @@ export const cartService = {
         throw error;
       }
 
-      return data.map(item => ({
+      console.log('Raw cart data:', data);
+
+      const cartItems = data.map(item => ({
         id: item.id,
         product_id: item.product_id,
         quantity: item.quantity,
@@ -61,6 +65,9 @@ export const cartService = {
           farm: item.marketplace_products.farms?.name || 'Unknown Farm',
         },
       }));
+
+      console.log('Processed cart items:', cartItems);
+      return cartItems;
     } catch (error) {
       console.error('Error in getCartItems:', error);
       return [];
@@ -72,19 +79,27 @@ export const cartService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No user logged in');
+        console.log('No user logged in for addToCart');
         return false;
       }
 
+      console.log('Adding to cart - User:', user.id, 'Product:', productId, 'Quantity:', quantity);
+
       // Check if item already exists in cart
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from('cart_items')
         .select('*')
         .eq('user_id', user.id)
         .eq('product_id', productId)
         .single();
 
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('Error checking existing cart item:', existingError);
+        throw existingError;
+      }
+
       if (existing) {
+        console.log('Item already in cart, updating quantity');
         // Update quantity
         const { error } = await supabase
           .from('cart_items')
@@ -95,7 +110,9 @@ export const cartService = {
           console.error('Error updating cart item:', error);
           throw error;
         }
+        console.log('Cart item quantity updated successfully');
       } else {
+        console.log('Item not in cart, inserting new item');
         // Insert new item
         const { error } = await supabase
           .from('cart_items')
@@ -109,6 +126,7 @@ export const cartService = {
           console.error('Error adding to cart:', error);
           throw error;
         }
+        console.log('New cart item added successfully');
       }
 
       return true;
@@ -121,6 +139,8 @@ export const cartService = {
   // Update cart item quantity
   async updateQuantity(cartItemId: string, quantity: number): Promise<boolean> {
     try {
+      console.log('Updating cart item quantity:', cartItemId, 'to', quantity);
+
       if (quantity <= 0) {
         return await this.removeFromCart(cartItemId);
       }
@@ -135,6 +155,7 @@ export const cartService = {
         throw error;
       }
 
+      console.log('Quantity updated successfully');
       return true;
     } catch (error) {
       console.error('Error in updateQuantity:', error);
@@ -145,6 +166,8 @@ export const cartService = {
   // Remove item from cart
   async removeFromCart(cartItemId: string): Promise<boolean> {
     try {
+      console.log('Removing cart item:', cartItemId);
+
       const { error } = await supabase
         .from('cart_items')
         .delete()
@@ -155,6 +178,7 @@ export const cartService = {
         throw error;
       }
 
+      console.log('Cart item removed successfully');
       return true;
     } catch (error) {
       console.error('Error in removeFromCart:', error);
@@ -167,9 +191,11 @@ export const cartService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No user logged in');
+        console.log('No user logged in for clearCart');
         return false;
       }
+
+      console.log('Clearing cart for user:', user.id);
 
       const { error } = await supabase
         .from('cart_items')
@@ -181,6 +207,7 @@ export const cartService = {
         throw error;
       }
 
+      console.log('Cart cleared successfully');
       return true;
     } catch (error) {
       console.error('Error in clearCart:', error);

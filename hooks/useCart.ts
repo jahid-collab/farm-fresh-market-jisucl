@@ -13,9 +13,11 @@ export function useCart() {
 
   const loadCart = async () => {
     try {
+      console.log('Loading cart...');
       setLoading(true);
       setError(null);
       const data = await cartService.getCartItems();
+      console.log('Cart loaded successfully:', data.length, 'items');
       setCartItems(data);
     } catch (err) {
       console.error('Error loading cart:', err);
@@ -27,7 +29,9 @@ export function useCart() {
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     try {
+      console.log('Adding to cart:', productId, 'quantity:', quantity);
       const success = await cartService.addToCart(productId, quantity);
+      console.log('Add to cart result:', success);
       if (success) {
         await loadCart();
       }
@@ -40,6 +44,7 @@ export function useCart() {
 
   const updateQuantity = async (cartItemId: string, quantity: number) => {
     try {
+      console.log('Updating quantity:', cartItemId, 'to', quantity);
       const success = await cartService.updateQuantity(cartItemId, quantity);
       if (success) {
         await loadCart();
@@ -53,6 +58,7 @@ export function useCart() {
 
   const removeFromCart = async (cartItemId: string) => {
     try {
+      console.log('Removing from cart:', cartItemId);
       const success = await cartService.removeFromCart(cartItemId);
       if (success) {
         await loadCart();
@@ -66,6 +72,7 @@ export function useCart() {
 
   const clearCart = async () => {
     try {
+      console.log('Clearing cart...');
       const success = await cartService.clearCart();
       if (success) {
         await loadCart();

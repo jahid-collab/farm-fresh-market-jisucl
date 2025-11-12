@@ -30,16 +30,28 @@ export const orderService = {
         return null;
       }
 
-      // Get user profile for delivery info
-      const { data: profile } = await supabase
-        .from('farmer_profiles')
-        .select('address, phone')
+      // Get user profile for delivery info - try multiple profile tables
+      let profile: any = null;
+      let profileError: any = null;
+
+      // Try profiles table first
+      const { data: profileData, error: err1 } = await supabase
+        .from('profiles')
+        .select('phone, full_name')
         .eq('id', user.id)
         .single();
 
-      if (!profile || !profile.address) {
-        throw new Error('Please add your delivery address in your profile');
+      if (profileData) {
+        profile = profileData;
+      } else {
+        profileError = err1;
       }
+
+      // If no profile found, use default values
+      const deliveryAddress = profile?.full_name 
+        ? `${profile.full_name}'s address` 
+        : 'Please update your delivery address';
+      const deliveryPhone = profile?.phone || '';
 
       // Get cart items
       const { data: cartItems, error: cartError } = await supabase
@@ -71,8 +83,8 @@ export const orderService = {
           user_id: user.id,
           status: 'pending',
           total_amount: totalAmount,
-          delivery_address: profile.address,
-          delivery_phone: profile.phone || '',
+          delivery_address: deliveryAddress,
+          delivery_phone: deliveryPhone,
           notes: '',
         })
         .select()
@@ -118,16 +130,25 @@ export const orderService = {
         return null;
       }
 
-      // Get user profile for delivery info
-      const { data: profile } = await supabase
-        .from('farmer_profiles')
-        .select('address, phone')
+      // Get user profile for delivery info - try multiple profile tables
+      let profile: any = null;
+
+      // Try profiles table first
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('phone, full_name')
         .eq('id', user.id)
         .single();
 
-      if (!profile || !profile.address) {
-        throw new Error('Please add your delivery address in your profile');
+      if (profileData) {
+        profile = profileData;
       }
+
+      // If no profile found, use default values
+      const deliveryAddress = profile?.full_name 
+        ? `${profile.full_name}'s address` 
+        : 'Please update your delivery address';
+      const deliveryPhone = profile?.phone || '';
 
       const totalAmount = product.price * quantity;
 
@@ -138,14 +159,17 @@ export const orderService = {
           user_id: user.id,
           status: 'pending',
           total_amount: totalAmount,
-          delivery_address: profile.address,
-          delivery_phone: profile.phone || '',
+          delivery_address: deliveryAddress,
+          delivery_phone: deliveryPhone,
           notes: '',
         })
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw orderError;
+      }
 
       // Create order item
       const { error: itemError } = await supabase
@@ -157,7 +181,10 @@ export const orderService = {
           price_at_purchase: product.price,
         });
 
-      if (itemError) throw itemError;
+      if (itemError) {
+        console.error('Order item creation error:', itemError);
+        throw itemError;
+      }
 
       return order.id;
     } catch (error) {
