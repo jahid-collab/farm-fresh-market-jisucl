@@ -37,6 +37,8 @@ export default function TabLayout() {
         <Stack.Screen key="home" name="(home)" />
         <Stack.Screen key="favorites" name="favorites" />
         <Stack.Screen key="profile" name="profile" />
+        <Stack.Screen key="auth" name="auth" />
+        <Stack.Screen key="edit-profile" name="edit-profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />
     </>

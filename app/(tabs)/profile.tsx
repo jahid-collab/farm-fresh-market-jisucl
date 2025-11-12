@@ -5,54 +5,54 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/app/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [profileData, setProfileData] = useState({
-    full_name: 'John Farmer',
-    email: 'john.farmer@example.com',
+    full_name: 'Guest User',
+    email: 'guest@example.com',
     avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
   });
-  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
 
-  const checkAuth = async () => {
+  const loadProfile = async () => {
+    if (!user) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsSignedIn(!!user);
-      
-      if (user) {
-        // Load profile data
-        const { data: profile } = await supabase
-          .from('farmer_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      // Load profile data
+      const { data: profile } = await supabase
+        .from('farmer_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        if (profile) {
-          setProfileData({
-            full_name: profile.full_name || 'User',
-            email: profile.email || user.email || '',
-            avatar_url: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
-          });
-        } else {
-          setProfileData({
-            full_name: 'User',
-            email: user.email || '',
-            avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
-          });
-        }
+      if (profile) {
+        setProfileData({
+          full_name: profile.full_name || 'User',
+          email: profile.email || user.email || '',
+          avatar_url: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+        });
+      } else {
+        setProfileData({
+          full_name: 'User',
+          email: user.email || '',
+          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+        });
       }
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error('Error loading profile:', error);
     }
   };
 
   const handleEditProfile = () => {
-    if (!isSignedIn) {
+    if (!user) {
       Alert.alert('Sign In Required', 'Please sign in to edit your profile');
       return;
     }
@@ -70,8 +70,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await supabase.auth.signOut();
-              setIsSignedIn(false);
+              await signOut();
               Alert.alert('Success', 'You have been logged out');
             } catch (error) {
               console.error('Error logging out:', error);
@@ -142,7 +141,7 @@ export default function ProfileScreen() {
               <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={item.onPress || (() => {
-                  if (!isSignedIn) {
+                  if (!user) {
                     Alert.alert('Sign In Required', 'Please sign in to access this feature');
                   } else {
                     Alert.alert('Coming Soon', `${item.label} feature will be available soon!`);
@@ -171,7 +170,7 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {isSignedIn ? (
+        {user ? (
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <IconSymbol
               ios_icon_name="arrow.right.square"
@@ -184,7 +183,7 @@ export default function ProfileScreen() {
         ) : (
           <TouchableOpacity 
             style={styles.logoutButton}
-            onPress={() => Alert.alert('Sign In', 'Sign in feature will be implemented')}
+            onPress={() => router.push('/auth')}
           >
             <IconSymbol
               ios_icon_name="arrow.right.square"

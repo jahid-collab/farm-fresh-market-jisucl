@@ -28,8 +28,22 @@ export default function EditProfileScreen() {
   });
 
   useEffect(() => {
-    loadProfile();
+    checkAuthAndLoadProfile();
   }, []);
+
+  const checkAuthAndLoadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to edit your profile', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+      return;
+    }
+    loadProfile();
+  };
 
   const loadProfile = async () => {
     try {

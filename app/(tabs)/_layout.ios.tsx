@@ -12,6 +12,8 @@ export default function TabLayout() {
         <Icon sf="person.fill" />
         <Label>Profile</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Screen key="auth" name="auth" options={{ href: null }} />
+      <NativeTabs.Screen key="edit-profile" name="edit-profile" options={{ href: null }} />
     </NativeTabs>
   );
 }
