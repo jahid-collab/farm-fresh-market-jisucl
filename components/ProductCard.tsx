@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Pressable } from 'react-native';
 import { Product } from '@/types/Product';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from './IconSymbol';
@@ -16,31 +16,30 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
   const router = useRouter();
 
   const handleAddToCart = () => {
-    console.log('Add to cart button pressed:', product.name);
+    console.log('ProductCard: Add to cart button pressed for:', product.name);
     if (onAddToCart) {
       onAddToCart(product);
     }
   };
 
   const handleBuyNow = () => {
-    console.log('Buy now button pressed:', product.name);
+    console.log('ProductCard: Buy now button pressed for:', product.name);
     if (onBuyNow) {
       onBuyNow(product);
     }
   };
 
   const handleCardPress = () => {
-    console.log('Product card pressed:', product.name);
+    console.log('ProductCard: Card pressed:', product.name);
     // Commenting out navigation for now since product detail page doesn't exist
     // router.push(`/product/${product.id}`);
   };
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity 
+      <Pressable 
         style={styles.imageContainer} 
         onPress={handleCardPress}
-        activeOpacity={0.8}
       >
         <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
         <View style={styles.ratingBadge}>
@@ -52,7 +51,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           />
           <Text style={styles.ratingText}>{product.rating}</Text>
         </View>
-        <TouchableOpacity style={styles.favoriteButton}>
+        <TouchableOpacity style={styles.favoriteButton} onPress={() => console.log('Favorite pressed')}>
           <IconSymbol
             ios_icon_name="heart"
             android_material_icon_name="favorite_border"
@@ -71,7 +70,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
             {product.farm}
           </Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
       <View style={styles.content}>
         <Text style={styles.productName} numberOfLines={1}>
           {product.name}
