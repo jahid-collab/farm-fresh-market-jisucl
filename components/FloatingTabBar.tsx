@@ -22,6 +22,7 @@ import Animated, {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Href } from 'expo-router';
 import { colors } from '@/styles/commonStyles';
+import { useCart } from '@/hooks/useCart';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -49,6 +50,9 @@ export default function FloatingTabBar({
   const pathname = usePathname();
   const theme = useTheme();
   const animatedValue = useSharedValue(0);
+  const { getTotalItems } = useCart();
+
+  const cartItemCount = getTotalItems();
 
   const activeTabIndex = React.useMemo(() => {
     let bestMatch = -1;
@@ -153,6 +157,8 @@ export default function FloatingTabBar({
           <View style={styles.tabsContainer}>
             {tabs.map((tab, index) => {
               const isActive = activeTabIndex === index;
+              const isCartTab = tab.name === 'cart';
+              const showBadge = isCartTab && cartItemCount > 0;
 
               return (
                 <React.Fragment key={index}>
@@ -162,12 +168,21 @@ export default function FloatingTabBar({
                     activeOpacity={0.7}
                   >
                     <View style={styles.tabContent}>
-                      <IconSymbol
-                        android_material_icon_name={tab.icon}
-                        ios_icon_name={tab.icon}
-                        size={24}
-                        color={isActive ? colors.primary : colors.textSecondary}
-                      />
+                      <View style={styles.iconContainer}>
+                        <IconSymbol
+                          android_material_icon_name={tab.icon}
+                          ios_icon_name={tab.icon}
+                          size={24}
+                          color={isActive ? colors.primary : colors.textSecondary}
+                        />
+                        {showBadge && (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>
+                              {cartItemCount > 99 ? '99+' : cartItemCount}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                       <Text
                         style={[
                           styles.tabLabel,
@@ -232,6 +247,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+  },
+  iconContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   tabLabel: {
     fontSize: 9,

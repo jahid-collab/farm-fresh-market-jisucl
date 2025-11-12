@@ -13,6 +13,12 @@ export default function TabLayout() {
       label: 'Home',
     },
     {
+      name: 'cart',
+      route: '/(tabs)/cart',
+      icon: 'shopping_cart',
+      label: 'Cart',
+    },
+    {
       name: 'favorites',
       route: '/(tabs)/favorites',
       icon: 'favorite',
@@ -35,6 +41,7 @@ export default function TabLayout() {
         }}
       >
         <Stack.Screen key="home" name="(home)" />
+        <Stack.Screen key="cart" name="cart" />
         <Stack.Screen key="favorites" name="favorites" />
         <Stack.Screen key="profile" name="profile" />
         <Stack.Screen key="auth" name="auth" />
