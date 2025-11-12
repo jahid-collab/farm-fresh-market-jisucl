@@ -15,14 +15,18 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
   const router = useRouter();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: any) => {
+    // Stop event propagation to prevent card press
+    e.stopPropagation();
     console.log('Add to cart:', product.name);
     if (onAddToCart) {
       onAddToCart(product);
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = (e: any) => {
+    // Stop event propagation to prevent card press
+    e.stopPropagation();
     console.log('Buy now:', product.name);
     if (onBuyNow) {
       onBuyNow(product);
@@ -31,7 +35,8 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
 
   const handleCardPress = () => {
     console.log('Product card pressed:', product.name);
-    router.push(`/product/${product.id}`);
+    // Commenting out navigation for now since product detail page doesn't exist
+    // router.push(`/product/${product.id}`);
   };
 
   return (
@@ -79,12 +84,18 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           <Text style={styles.unit}>{product.unit}</Text>
         </View>
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+          <Pressable 
+            style={styles.addToCartButton} 
+            onPress={handleAddToCart}
+          >
             <Text style={styles.addToCartText}>Add to Cart</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.buyNowButton} onPress={handleBuyNow}>
+          </Pressable>
+          <Pressable 
+            style={styles.buyNowButton} 
+            onPress={handleBuyNow}
+          >
             <Text style={styles.buyNowText}>Buy Now</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </Pressable>
