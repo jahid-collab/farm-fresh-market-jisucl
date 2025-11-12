@@ -11,8 +11,10 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { orderService } from '@/services/orderService';
 import { supabase } from '@/app/integrations/supabase/client';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [processingOrder, setProcessingOrder] = useState(false);
@@ -103,6 +105,11 @@ export default function HomeScreen() {
     Alert.alert('Order Now', 'Delivery service coming soon!');
   };
 
+  const handleAddProduct = () => {
+    console.log('Add product pressed');
+    router.push('/(tabs)/(home)/add-product');
+  };
+
   // Filter products based on selected category and search query
   const filteredProducts = products.filter(product => {
     const matchesCategory = !selectedCategory || 
@@ -130,101 +137,117 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {processingOrder && (
-        <View style={styles.processingOverlay}>
-          <View style={styles.processingCard}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.processingText}>Processing your order...</Text>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>Good Morning 👋</Text>
-            <Text style={styles.subtitle}>Let&apos;s order fresh items for you</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <IconSymbol 
-              ios_icon_name="bell.fill" 
-              android_material_icon_name="notifications" 
-              size={24} 
-              color={colors.text} 
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <IconSymbol 
-            ios_icon_name="magnifyingglass" 
-            android_material_icon_name="search" 
-            size={20} 
-            color={colors.textSecondary} 
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search products..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      <DeliveryBanner onOrderNow={handleOrderNow} />
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-        >
-          {categories.map((category) => (
-            <CategoryChip
-              key={category.id}
-              category={category}
-              isSelected={selectedCategory === category.id}
-              onPress={() => handleCategoryPress(category)}
-            />
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory 
-              ? categories.find(c => c.id === selectedCategory)?.name 
-              : 'Featured Products'}
-          </Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {filteredProducts.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No products found</Text>
-          </View>
-        ) : (
-          <View style={styles.productsGrid}>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onBuyNow={handleBuyNow}
-              />
-            ))}
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {processingOrder && (
+          <View style={styles.processingOverlay}>
+            <View style={styles.processingCard}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.processingText}>Processing your order...</Text>
+            </View>
           </View>
         )}
-      </View>
 
-      <View style={{ height: 100 }} />
-    </ScrollView>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.greeting}>Good Morning 👋</Text>
+              <Text style={styles.subtitle}>Let&apos;s order fresh items for you</Text>
+            </View>
+            <TouchableOpacity style={styles.notificationButton}>
+              <IconSymbol 
+                ios_icon_name="bell.fill" 
+                android_material_icon_name="notifications" 
+                size={24} 
+                color={colors.text} 
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <IconSymbol 
+              ios_icon_name="magnifyingglass" 
+              android_material_icon_name="search" 
+              size={20} 
+              color={colors.textSecondary} 
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search products..."
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+
+        <DeliveryBanner onOrderNow={handleOrderNow} />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+          >
+            {categories.map((category) => (
+              <CategoryChip
+                key={category.id}
+                category={category}
+                isSelected={selectedCategory === category.id}
+                onPress={() => handleCategoryPress(category)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {selectedCategory 
+                ? categories.find(c => c.id === selectedCategory)?.name 
+                : 'Featured Products'}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {filteredProducts.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No products found</Text>
+            </View>
+          ) : (
+            <View style={styles.productsGrid}>
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleAddProduct}
+        activeOpacity={0.8}
+      >
+        <IconSymbol
+          ios_icon_name="plus"
+          android_material_icon_name="add"
+          size={28}
+          color="#fff"
+        />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -232,6 +255,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -358,5 +384,23 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: colors.textSecondary,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
   },
 });
