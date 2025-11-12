@@ -1,130 +1,164 @@
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { colors } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
-import CategoryChip from '@/components/CategoryChip';
-import ProductCard from '@/components/ProductCard';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import DeliveryBanner from '@/components/DeliveryBanner';
-import { categories, products } from '@/data/mockData';
+import React, { useState } from 'react';
 import { Product, Category } from '@/types/Product';
+import CategoryChip from '@/components/CategoryChip';
+import { colors } from '@/styles/commonStyles';
+import ProductCard from '@/components/ProductCard';
+import { IconSymbol } from '@/components/IconSymbol';
+import { useProducts } from '@/hooks/useProducts';
+import { useCart } from '@/hooks/useCart';
 
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    const matchesSearch = !searchQuery || product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  
+  const { products, categories, loading, error } = useProducts();
+  const { addToCart } = useCart();
 
   const handleCategoryPress = (category: Category) => {
-    if (selectedCategory === category.name) {
+    console.log('Category pressed:', category.name);
+    if (selectedCategory === category.id) {
       setSelectedCategory(null);
     } else {
-      setSelectedCategory(category.name);
+      setSelectedCategory(category.id);
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    Alert.alert('Added to Cart', `${product.name} has been added to your cart.`);
+  const handleAddToCart = async (product: Product) => {
+    console.log('Add to cart:', product.name);
+    const success = await addToCart(product.id);
+    if (success) {
+      Alert.alert('Success', `${product.name} added to cart!`);
+    } else {
+      Alert.alert('Error', 'Please sign in to add items to cart');
+    }
   };
 
   const handleBuyNow = (product: Product) => {
-    Alert.alert('Buy Now', `Proceeding to checkout for ${product.name}.`);
+    console.log('Buy now:', product.name);
+    Alert.alert('Buy Now', `Proceeding to checkout for ${product.name}`);
   };
 
   const handleOrderNow = () => {
-    Alert.alert('Order Now', 'Get free delivery on orders above USD 2,000!');
+    console.log('Order now pressed');
+    Alert.alert('Order Now', 'Delivery service coming soon!');
   };
 
+  // Filter products based on selected category and search query
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = !selectedCategory || 
+      categories.find(cat => cat.id === selectedCategory)?.name === product.category;
+    const matchesSearch = !searchQuery || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading products...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.locationContainer}>
-            <Text style={styles.locationLabel}>Delivering address</Text>
-            <View style={styles.locationRow}>
-              <IconSymbol
-                ios_icon_name="location.fill"
-                android_material_icon_name="location_on"
-                size={16}
-                color={colors.primary}
-              />
-              <Text style={styles.locationText}>45 Sunlit Road, CT1 2AA, UK</Text>
-            </View>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.greeting}>Good Morning 👋</Text>
+            <Text style={styles.subtitle}>Let&apos;s order fresh items for you</Text>
           </View>
-          <TouchableOpacity style={styles.bagButton}>
-            <IconSymbol
-              ios_icon_name="bag.fill"
-              android_material_icon_name="shopping_bag"
-              size={24}
-              color={colors.primary}
+          <TouchableOpacity style={styles.notificationButton}>
+            <IconSymbol 
+              ios_icon_name="bell.fill" 
+              android_material_icon_name="notifications" 
+              size={24} 
+              color={colors.text} 
             />
           </TouchableOpacity>
         </View>
 
         <View style={styles.searchContainer}>
-          <IconSymbol
-            ios_icon_name="magnifyingglass"
-            android_material_icon_name="search"
-            size={20}
-            color={colors.textSecondary}
+          <IconSymbol 
+            ios_icon_name="magnifyingglass" 
+            android_material_icon_name="search" 
+            size={20} 
+            color={colors.textSecondary} 
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products, farms, categories"
+            placeholder="Search products..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((category, index) => (
-              <React.Fragment key={index}>
-                <CategoryChip
-                  category={category}
-                  isSelected={selectedCategory === category.name}
-                  onPress={handleCategoryPress}
-                />
-              </React.Fragment>
-            ))}
-          </ScrollView>
+      <DeliveryBanner onOrderNow={handleOrderNow} />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Categories</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          {categories.map((category) => (
+            <CategoryChip
+              key={category.id}
+              category={category}
+              isSelected={selectedCategory === category.id}
+              onPress={() => handleCategoryPress(category)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            {selectedCategory 
+              ? categories.find(c => c.id === selectedCategory)?.name 
+              : 'Featured Products'}
+          </Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
         </View>
 
-        <DeliveryBanner onOrderNow={handleOrderNow} />
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Freshly in Stocked</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>VIEW ALL</Text>
-            </TouchableOpacity>
+        {filteredProducts.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No products found</Text>
           </View>
-          {filteredProducts.map((product, index) => (
-            <React.Fragment key={index}>
+        ) : (
+          <View style={styles.productsGrid}>
+            {filteredProducts.map((product) => (
               <ProductCard
+                key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
                 onBuyNow={handleBuyNow}
               />
-            </React.Fragment>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={{ height: 100 }} />
+    </ScrollView>
   );
 }
 
@@ -133,64 +167,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
   },
-  scrollContent: {
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 120,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.error,
+    textAlign: 'center',
   },
   header: {
+    padding: 20,
+    paddingTop: 60,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
-  locationContainer: {
-    flex: 1,
-  },
-  locationLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
     marginBottom: 4,
   },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
+  subtitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    flex: 1,
+    color: colors.textSecondary,
   },
-  bagButton: {
+  notificationButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.card,
-    alignItems: 'center',
+    backgroundColor: colors.surface,
     justifyContent: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    alignItems: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 24,
-    gap: 10,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-    elevation: 1,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    marginLeft: 12,
+    fontSize: 16,
     color: colors.text,
   },
   section: {
@@ -200,19 +239,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: colors.text,
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-  viewAllText: {
-    fontSize: 12,
-    fontWeight: '600',
+  seeAll: {
+    fontSize: 14,
     color: colors.primary,
+    fontWeight: '600',
   },
   categoriesContainer: {
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  productsGrid: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.textSecondary,
   },
 });
