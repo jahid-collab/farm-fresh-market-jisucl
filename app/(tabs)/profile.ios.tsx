@@ -1,12 +1,90 @@
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { useRouter } from 'expo-router';
+import { supabase } from '@/app/integrations/supabase/client';
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const [profileData, setProfileData] = useState({
+    full_name: 'John Farmer',
+    email: 'john.farmer@example.com',
+    avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+  });
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsSignedIn(!!user);
+      
+      if (user) {
+        // Load profile data
+        const { data: profile } = await supabase
+          .from('farmer_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setProfileData({
+            full_name: profile.full_name || 'User',
+            email: profile.email || user.email || '',
+            avatar_url: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+          });
+        } else {
+          setProfileData({
+            full_name: 'User',
+            email: user.email || '',
+            avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    }
+  };
+
+  const handleEditProfile = () => {
+    if (!isSignedIn) {
+      Alert.alert('Sign In Required', 'Please sign in to edit your profile');
+      return;
+    }
+    router.push('/edit-profile');
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await supabase.auth.signOut();
+              setIsSignedIn(false);
+              Alert.alert('Success', 'You have been logged out');
+            } catch (error) {
+              console.error('Error logging out:', error);
+              Alert.alert('Error', 'Failed to logout');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const menuItems = [
-    { icon: 'person', label: 'Edit Profile', route: '/edit-profile' },
+    { icon: 'person', label: 'Edit Profile', route: '/edit-profile', onPress: handleEditProfile },
     { icon: 'location_on', label: 'Addresses', route: '/addresses' },
     { icon: 'payment', label: 'Payment Methods', route: '/payment' },
     { icon: 'history', label: 'Order History', route: '/orders' },
@@ -25,10 +103,10 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }}
+              source={{ uri: profileData.avatar_url }}
               style={styles.avatar}
             />
-            <TouchableOpacity style={styles.editAvatarButton}>
+            <TouchableOpacity style={styles.editAvatarButton} onPress={handleEditProfile}>
               <IconSymbol
                 ios_icon_name="camera.fill"
                 android_material_icon_name="camera_alt"
@@ -37,8 +115,8 @@ export default function ProfileScreen() {
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.name}>John Farmer</Text>
-          <Text style={styles.email}>john.farmer@example.com</Text>
+          <Text style={styles.name}>{profileData.full_name}</Text>
+          <Text style={styles.email}>{profileData.email}</Text>
         </View>
 
         <View style={styles.statsContainer}>
@@ -61,7 +139,16 @@ export default function ProfileScreen() {
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <React.Fragment key={index}>
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={item.onPress || (() => {
+                  if (!isSignedIn) {
+                    Alert.alert('Sign In Required', 'Please sign in to access this feature');
+                  } else {
+                    Alert.alert('Coming Soon', `${item.label} feature will be available soon!`);
+                  }
+                })}
+              >
                 <View style={styles.menuItemLeft}>
                   <View style={styles.menuIconContainer}>
                     <IconSymbol
@@ -84,15 +171,30 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
-          <IconSymbol
-            ios_icon_name="arrow.right.square"
-            android_material_icon_name="logout"
-            size={20}
-            color={colors.card}
-          />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        {isSignedIn ? (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <IconSymbol
+              ios_icon_name="arrow.right.square"
+              android_material_icon_name="logout"
+              size={20}
+              color={colors.card}
+            />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={() => Alert.alert('Sign In', 'Sign in feature will be implemented')}
+          >
+            <IconSymbol
+              ios_icon_name="arrow.right.square"
+              android_material_icon_name="login"
+              size={20}
+              color={colors.card}
+            />
+            <Text style={styles.logoutText}>Sign In</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -107,7 +209,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 60,
     paddingHorizontal: 16,
     paddingBottom: 120,
   },

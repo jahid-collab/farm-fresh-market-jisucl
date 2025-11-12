@@ -9,10 +9,13 @@ import ProductCard from '@/components/ProductCard';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
+import { orderService } from '@/services/orderService';
+import { supabase } from '@/app/integrations/supabase/client';
 
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [processingOrder, setProcessingOrder] = useState(false);
   
   const { products, categories, loading, error } = useProducts();
   const { addToCart } = useCart();
@@ -28,17 +31,71 @@ export default function HomeScreen() {
 
   const handleAddToCart = async (product: Product) => {
     console.log('Add to cart:', product.name);
+    
+    // Check if user is signed in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in to add items to your cart',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     const success = await addToCart(product.id);
     if (success) {
       Alert.alert('Success', `${product.name} added to cart!`);
     } else {
-      Alert.alert('Error', 'Please sign in to add items to cart');
+      Alert.alert('Error', 'Failed to add item to cart. Please try again.');
     }
   };
 
-  const handleBuyNow = (product: Product) => {
+  const handleBuyNow = async (product: Product) => {
     console.log('Buy now:', product.name);
-    Alert.alert('Buy Now', `Proceeding to checkout for ${product.name}`);
+    
+    // Check if user is signed in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in to place an order',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Confirm Order',
+      `Do you want to buy ${product.name} for $${product.price}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Buy Now',
+          onPress: async () => {
+            try {
+              setProcessingOrder(true);
+              const orderId = await orderService.createOrderForProduct(product, 1);
+              
+              if (orderId) {
+                Alert.alert(
+                  'Order Placed!',
+                  `Your order for ${product.name} has been placed successfully. Order ID: ${orderId.substring(0, 8)}...`,
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert('Error', 'Failed to place order. Please try again.');
+              }
+            } catch (error: any) {
+              console.error('Error placing order:', error);
+              Alert.alert('Error', error.message || 'Failed to place order. Please try again.');
+            } finally {
+              setProcessingOrder(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleOrderNow = () => {
@@ -74,6 +131,15 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {processingOrder && (
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.processingText}>Processing your order...</Text>
+          </View>
+        </View>
+      )}
+
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -190,9 +256,32 @@ const styles = StyleSheet.create({
     color: colors.error,
     textAlign: 'center',
   },
+  processingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  processingCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+  },
+  processingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
   header: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 48,
   },
   headerTop: {
     flexDirection: 'row',
