@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Pressable } from 'react-native';
 import { Product } from '@/types/Product';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from './IconSymbol';
@@ -15,14 +15,16 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
   const router = useRouter();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: any) => {
+    e?.stopPropagation?.();
     console.log('Add to cart button pressed:', product.name);
     if (onAddToCart) {
       onAddToCart(product);
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = (e: any) => {
+    e?.stopPropagation?.();
     console.log('Buy now button pressed:', product.name);
     if (onBuyNow) {
       onBuyNow(product);
@@ -84,20 +86,24 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           <Text style={styles.unit}>{product.unit}</Text>
         </View>
         <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.addToCartButton} 
+          <Pressable 
+            style={({ pressed }) => [
+              styles.addToCartButton,
+              pressed && styles.buttonPressed
+            ]}
             onPress={handleAddToCart}
-            activeOpacity={0.7}
           >
             <Text style={styles.addToCartText}>Add to Cart</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.buyNowButton} 
+          </Pressable>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.buyNowButton,
+              pressed && styles.buttonPressed
+            ]}
             onPress={handleBuyNow}
-            activeOpacity={0.7}
           >
             <Text style={styles.buyNowText}>Buy Now</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -210,6 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   addToCartText: {
     fontSize: 14,
@@ -223,10 +230,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   buyNowText: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.card,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
 });
