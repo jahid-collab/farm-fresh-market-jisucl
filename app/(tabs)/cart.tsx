@@ -361,33 +361,36 @@ export default function CartScreen() {
                 <View style={styles.rightControls}>
                   <View style={styles.quantityControls}>
                     <TouchableOpacity
-                      style={styles.quantityButton}
+                      style={[styles.quantityButton, styles.decreaseButton]}
                       onPress={() => handleDecreaseQuantity(item.id, item.quantity)}
                       disabled={isUpdating}
+                      activeOpacity={0.7}
                     >
                       <IconSymbol
                         ios_icon_name="minus"
                         android_material_icon_name="remove"
-                        size={16}
-                        color={isUpdating ? colors.textSecondary : colors.primary}
+                        size={18}
+                        color={isUpdating ? colors.textSecondary : '#fff'}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleOpenQuantityEditor(item.id, item.quantity)}
                       disabled={isUpdating}
+                      style={styles.quantityTextContainer}
                     >
                       <Text style={styles.quantityText}>{item.quantity}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.quantityButton}
+                      style={[styles.quantityButton, styles.increaseButton]}
                       onPress={() => handleIncreaseQuantity(item.id, item.quantity)}
                       disabled={isUpdating}
+                      activeOpacity={0.7}
                     >
                       <IconSymbol
                         ios_icon_name="plus"
                         android_material_icon_name="add"
-                        size={16}
-                        color={isUpdating ? colors.textSecondary : colors.primary}
+                        size={18}
+                        color={isUpdating ? colors.textSecondary : '#fff'}
                       />
                     </TouchableOpacity>
                   </View>
@@ -395,11 +398,12 @@ export default function CartScreen() {
                     style={styles.removeButton}
                     onPress={() => handleRemoveItem(item.id)}
                     disabled={isUpdating}
+                    activeOpacity={0.7}
                   >
                     <IconSymbol
-                      ios_icon_name="trash"
+                      ios_icon_name="trash.fill"
                       android_material_icon_name="delete"
-                      size={20}
+                      size={22}
                       color={isUpdating ? colors.textSecondary : colors.error}
                     />
                   </TouchableOpacity>
@@ -721,36 +725,45 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rightControls: {
-    gap: 8,
+    gap: 12,
     alignItems: 'center',
   },
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 4,
-    gap: 8,
+    gap: 4,
   },
   quantityButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: colors.card,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  decreaseButton: {
+    backgroundColor: colors.error,
+  },
+  increaseButton: {
+    backgroundColor: colors.primary,
+  },
+  quantityTextContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
   quantityText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
-    minWidth: 32,
+    minWidth: 24,
     textAlign: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   removeButton: {
     padding: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
   },
   summaryContainer: {
     backgroundColor: colors.card,
