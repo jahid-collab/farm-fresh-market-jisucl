@@ -11,6 +11,13 @@ export function useProducts() {
 
   useEffect(() => {
     loadData();
+    
+    // Set up an interval to refresh products every 10 seconds
+    const interval = setInterval(() => {
+      refreshProducts();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -23,6 +30,7 @@ export function useProducts() {
         productService.getCategories(),
       ]);
 
+      console.log('Loaded products:', productsData.length);
       setProducts(productsData);
       setCategories(categoriesData);
     } catch (err) {
@@ -34,7 +42,13 @@ export function useProducts() {
   };
 
   const refreshProducts = async () => {
-    await loadData();
+    try {
+      const productsData = await productService.getProducts();
+      console.log('Refreshed products:', productsData.length);
+      setProducts(productsData);
+    } catch (err) {
+      console.error('Error refreshing products:', err);
+    }
   };
 
   return {

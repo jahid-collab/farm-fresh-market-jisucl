@@ -44,13 +44,15 @@ export default function AddProductScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
     checkAuthAndRequestPermissions();
+    loadData();
   }, []);
 
   const checkAuthAndRequestPermissions = async () => {
     // Check if user is signed in
     const { data: { user } } = await supabase.auth.getUser();
+    console.log('Current user:', user?.id);
+    
     if (!user) {
       Alert.alert(
         'Sign In Required',
@@ -119,11 +121,14 @@ export default function AddProductScreen() {
   const uploadImage = async (uri: string): Promise<string | null> => {
     try {
       setUploading(true);
+      console.log('Starting image upload...');
       
       // Get file extension
       const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = `products/${fileName}`;
+
+      console.log('File path:', filePath);
 
       // Fetch the image as a blob
       const response = await fetch(uri);
@@ -136,6 +141,8 @@ export default function AddProductScreen() {
         reader.onerror = reject;
         reader.readAsArrayBuffer(blob);
       });
+
+      console.log('Uploading to Supabase Storage...');
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
@@ -150,15 +157,18 @@ export default function AddProductScreen() {
         throw error;
       }
 
+      console.log('Upload successful:', data);
+
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      Alert.alert('Error', 'Failed to upload image');
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
       return null;
     } finally {
       setUploading(false);
@@ -186,31 +196,50 @@ export default function AddProductScreen() {
 
     try {
       setLoading(true);
+      console.log('Starting product submission...');
+
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Error', 'You must be signed in to add products');
+        return;
+      }
+
+      console.log('User authenticated:', user.id);
 
       // Upload image if selected
       let imageUrl = '';
       if (imageUri) {
+        console.log('Uploading image...');
         const uploadedUrl = await uploadImage(imageUri);
         if (uploadedUrl) {
           imageUrl = uploadedUrl;
+          console.log('Image uploaded successfully');
+        } else {
+          console.log('Image upload failed, continuing without image');
         }
       }
+
+      // Prepare product data
+      const productData = {
+        name: name.trim(),
+        description: description.trim() || null,
+        price: Number(price),
+        original_price: originalPrice.trim() ? Number(originalPrice) : null,
+        unit: unit,
+        category_id: categoryId,
+        farm_id: farmId,
+        image: imageUrl || null,
+        in_stock: true,
+        rating: 0,
+      };
+
+      console.log('Creating product with data:', productData);
 
       // Create product
       const { data, error } = await supabase
         .from('marketplace_products')
-        .insert({
-          name: name.trim(),
-          description: description.trim() || null,
-          price: Number(price),
-          original_price: originalPrice.trim() ? Number(originalPrice) : null,
-          unit: unit,
-          category_id: categoryId,
-          farm_id: farmId,
-          image: imageUrl || null,
-          in_stock: true,
-          rating: 0,
-        })
+        .insert(productData)
         .select()
         .single();
 
@@ -218,6 +247,8 @@ export default function AddProductScreen() {
         console.error('Error creating product:', error);
         throw error;
       }
+
+      console.log('Product created successfully:', data);
 
       Alert.alert(
         'Success',

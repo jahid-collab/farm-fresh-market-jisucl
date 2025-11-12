@@ -1,7 +1,7 @@
 
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import DeliveryBanner from '@/components/DeliveryBanner';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, Category } from '@/types/Product';
 import CategoryChip from '@/components/CategoryChip';
 import { colors } from '@/styles/commonStyles';
@@ -12,15 +12,31 @@ import { useCart } from '@/hooks/useCart';
 import { orderService } from '@/services/orderService';
 import { supabase } from '@/app/integrations/supabase/client';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [processingOrder, setProcessingOrder] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
-  const { products, categories, loading, error } = useProducts();
+  const { products, categories, loading, error, refreshProducts } = useProducts();
   const { addToCart } = useCart();
+
+  // Refresh products when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Home screen focused, refreshing products...');
+      refreshProducts();
+    }, [])
+  );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshProducts();
+    setRefreshing(false);
+  };
 
   const handleCategoryPress = (category: Category) => {
     console.log('Category pressed:', category.name);
@@ -119,7 +135,7 @@ export default function HomeScreen() {
     return matchesCategory && matchesSearch;
   });
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -132,13 +148,27 @@ export default function HomeScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refreshProducts}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {processingOrder && (
           <View style={styles.processingOverlay}>
             <View style={styles.processingCard}>
@@ -216,6 +246,7 @@ export default function HomeScreen() {
           {filteredProducts.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No products found</Text>
+              <Text style={styles.emptySubtext}>Try adding some products or adjusting your filters</Text>
             </View>
           ) : (
             <View style={styles.productsGrid}>
@@ -281,6 +312,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.error,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   processingOverlay: {
     position: 'absolute',
@@ -384,6 +427,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: colors.textSecondary,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
