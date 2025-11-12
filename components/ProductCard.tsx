@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Product } from '@/types/Product';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from './IconSymbol';
@@ -15,16 +15,14 @@ interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
   const router = useRouter();
 
-  const handleAddToCart = (e: any) => {
-    e?.stopPropagation?.();
+  const handleAddToCart = () => {
     console.log('Add to cart button pressed:', product.name);
     if (onAddToCart) {
       onAddToCart(product);
     }
   };
 
-  const handleBuyNow = (e: any) => {
-    e?.stopPropagation?.();
+  const handleBuyNow = () => {
     console.log('Buy now button pressed:', product.name);
     if (onBuyNow) {
       onBuyNow(product);
@@ -86,24 +84,20 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           <Text style={styles.unit}>{product.unit}</Text>
         </View>
         <View style={styles.buttonRow}>
-          <Pressable 
-            style={({ pressed }) => [
-              styles.addToCartButton,
-              pressed && styles.buttonPressed
-            ]}
+          <TouchableOpacity 
+            style={styles.addToCartButton}
             onPress={handleAddToCart}
+            activeOpacity={0.7}
           >
             <Text style={styles.addToCartText}>Add to Cart</Text>
-          </Pressable>
-          <Pressable 
-            style={({ pressed }) => [
-              styles.buyNowButton,
-              pressed && styles.buttonPressed
-            ]}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.buyNowButton}
             onPress={handleBuyNow}
+            activeOpacity={0.7}
           >
             <Text style={styles.buyNowText}>Buy Now</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -236,9 +230,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.card,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
   },
 });
